@@ -4,6 +4,21 @@
 
 ---
 
+## Quick Start (Local)
+
+```bash
+git clone https://github.com/yentureylem/cfDNA-cancer-detection-xai.git
+cd cfDNA-cancer-detection-xai
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+streamlit run app.py
+```
+
+Then open your browser: **http://localhost:8501**
+
+---
+
 ## Overview
 
 This project demonstrates a complete machine learning pipeline for **cell-free DNA (cfDNA)-based early cancer detection** with integrated explainable AI (XAI) capabilities. The application showcases rigorous data preprocessing, feature engineering, model development with hyperparameter optimization, comprehensive evaluation, and transparent model interpretability using SHAP.
@@ -128,7 +143,7 @@ The app will open at `http://localhost:8501`
 - ✅ Statistical rigor in performance measurement
 - ✅ Generalization assessment
 
-### Tab 4: Explainability (SHAP)
+### Tab 4: Explainability (SHAP - Local)
 - **Feature Importance:** Mean absolute SHAP values ranked by importance
 - **Individual Prediction Explanation:** SHAP values for specific test samples
 - **Decision Plot:** Visual explanation of how features influence prediction
@@ -137,6 +152,8 @@ The app will open at `http://localhost:8501`
 - ✅ Model explainability (XAI)
 - ✅ Feature importance ranking
 - ✅ Transparent decision-making (critical for healthcare)
+
+*Note: SHAP requires local deployment due to computational intensity.*
 
 ### Tab 5: Prediction
 - Input values for all 10 features
@@ -198,7 +215,7 @@ The app will open at `http://localhost:8501`
 |-----------|-----------|
 | **Frontend** | Streamlit |
 | **Data Processing** | Pandas, NumPy |
-| **ML Models** | Scikit-learn, PyTorch |
+| **ML Models** | Scikit-learn |
 | **Hyperparameter Optimization** | GridSearchCV |
 | **Evaluation** | Scikit-learn metrics |
 | **Explainability** | SHAP |
