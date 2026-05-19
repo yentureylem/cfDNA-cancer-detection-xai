@@ -284,65 +284,92 @@ with tab3:
 with tab4:
     st.header("Explainable AI Analysis (SHAP)")
     
-    if 'best_model' in st.session_state:
-        model = st.session_state.best_model
+    try:
+        import shap
         
-        st.info("Computing SHAP values... This may take a moment for large datasets.")
-        
-        # SHAP explainer
-        explainer = shap.TreeExplainer(model) if st.session_state.model_type == "Random Forest" \
-                   else shap.KernelExplainer(model.predict_proba, X_train_scaled[:100])
-        
-        shap_values = explainer.shap_values(X_test_scaled)
-        
-        # Handle multi-class output
-        if isinstance(shap_values, list):
-            shap_values = shap_values[1]  # Cancer class
-        
-        col1, col2 = st.columns(2)
-        
-        with col1:
-            st.subheader("Feature Importance (Mean |SHAP|)")
-            feature_importance = pd.DataFrame({
-                'Feature': X_raw.columns,
-                'Importance': np.abs(shap_values).mean(axis=0)
-            }).sort_values('Importance', ascending=False)
+        if 'best_model' in st.session_state:
+            model = st.session_state.best_model
             
-            fig = px.bar(feature_importance, x='Importance', y='Feature', 
-                        orientation='h', color='Importance')
-            st.plotly_chart(fig, use_container_width=True)
-        
-        with col2:
-            st.subheader("Top Feature for Individual Prediction")
-            sample_idx = st.slider("Select Test Sample", 0, len(X_test_scaled)-1, 0)
+            st.info("Computing SHAP values... This may take a moment for large datasets.")
             
-            sample_shap = shap_values[sample_idx]
-            sample_features = X_test_scaled[sample_idx]
+            # SHAP explainer
+            explainer = shap.TreeExplainer(model) if st.session_state.model_type == "Random Forest" \
+                       else shap.KernelExplainer(model.predict_proba, X_train_scaled[:100])
             
-            explanation_data = pd.DataFrame({
-                'Feature': X_raw.columns,
-                'Value': sample_features,
-                'SHAP': sample_shap
-            }).sort_values('SHAP', ascending=False, key=abs)
+            shap_values = explainer.shap_values(X_test_scaled)
             
-            fig = px.bar(explanation_data.head(10), x='SHAP', y='Feature', 
-                        orientation='h', color='SHAP',
-                        color_continuous_scale='RdBu_r', color_continuous_midpoint=0)
-            st.plotly_chart(fig, use_container_width=True)
+            # Handle multi-class output
+            if isinstance(shap_values, list):
+                shap_values = shap_values[1]  # Cancer class
+            
+            col1, col2 = st.columns(2)
+            
+            with col1:
+                st.subheader("Feature Importance (Mean |SHAP|)")
+                feature_importance = pd.DataFrame({
+                    'Feature': X_raw.columns,
+                    'Importance': np.abs(shap_values).mean(axis=0)
+                }).sort_values('Importance', ascending=False)
+                
+                fig = px.bar(feature_importance, x='Importance', y='Feature', 
+                            orientation='h', color='Importance')
+                st.plotly_chart(fig, use_container_width=True)
+            
+            with col2:
+                st.subheader("Top Feature for Individual Prediction")
+                sample_idx = st.slider("Select Test Sample", 0, len(X_test_scaled)-1, 0)
+                
+                sample_shap = shap_values[sample_idx]
+                sample_features = X_test_scaled[sample_idx]
+                
+                explanation_data = pd.DataFrame({
+                    'Feature': X_raw.columns,
+                    'Value': sample_features,
+                    'SHAP': sample_shap
+                }).sort_values('SHAP', ascending=False, key=abs)
+                
+                fig = px.bar(explanation_data.head(10), x='SHAP', y='Feature', 
+                            orientation='h', color='SHAP',
+                            color_continuous_scale='RdBu_r', color_continuous_midpoint=0)
+                st.plotly_chart(fig, use_container_width=True)
+            
+            st.subheader("Decision Plot (Sample Analysis)")
+            sample_idx_dp = st.slider("Select Sample for Decision Plot", 0, len(X_test_scaled)-1, 0)
+            
+            shap.decision_plot(explainer.expected_value if hasattr(explainer, 'expected_value') else 0,
+                              shap_values[sample_idx_dp:sample_idx_dp+1],
+                              X_test_scaled[sample_idx_dp:sample_idx_dp+1],
+                              feature_names=list(X_raw.columns),
+                              show=False)
+            
+            st.pyplot(plt.gcf(), use_container_width=True)
+            
+        else:
+            st.warning("⚠️ Please train a model first in the 'Model Training' tab")
+    
+    except ImportError:
+        st.info("🔧 **SHAP Feature Available in Local Deployment**")
+        st.write("""
+        SHAP (explainability) analysis requires additional dependencies that are 
+        memory-intensive for cloud deployment.
         
-        st.subheader("Decision Plot (Sample Analysis)")
-        sample_idx_dp = st.slider("Select Sample for Decision Plot", 0, len(X_test_scaled)-1, 0)
+        **To use SHAP locally:**
+        ```bash
+        git clone https://github.com/yentureylem/cfDNA-cancer-detection-xai.git
+        cd cfDNA-cancer-detection-xai
+        python -m venv venv
+        source venv/bin/activate
+        pip install -r requirements-local.txt
+        streamlit run app.py
+        ```
         
-        shap.decision_plot(explainer.expected_value if hasattr(explainer, 'expected_value') else 0,
-                          shap_values[sample_idx_dp:sample_idx_dp+1],
-                          X_test_scaled[sample_idx_dp:sample_idx_dp+1],
-                          feature_names=list(X_raw.columns),
-                          show=False)
+        **What you'll get locally:**
+        ✅ Feature importance rankings (mean |SHAP| values)
+        ✅ Individual prediction explanations
+        ✅ Decision plots for model transparency
         
-        st.pyplot(plt.gcf(), use_container_width=True)
-        
-    else:
-        st.warning("⚠️ Please train a model first in the 'Model Training' tab")
+        This demonstrates the app's full XAI capabilities!
+        """)
 
 # ==================== TAB 5: PREDICTION ====================
 with tab5:
